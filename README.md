@@ -11,6 +11,21 @@ GitHub's HTML subset (`<details>`, `<picture>` with dark-mode sources, `<kbd>`, 
 `file.md#section`), outline sidebar (⌃⌘S), view source (⌥⌘U), find (⌘F / ⌘G), zoom (⌘+ / ⌘− / ⌘0),
 print and Export as PDF (⇧⌘E), tabs, Open Recent, and *Make Default Markdown Viewer* in the app menu.
 
+## Install
+
+Download `Markfetti-<version>.dmg` from the [latest release](https://github.com/acceleroto/Markfetti/releases/latest),
+open it and drag **Markfetti** to **Applications**. It runs on macOS 13 or later, on Apple Silicon and Intel Macs.
+
+The app isn't notarized by Apple yet, so the first time you open it macOS says it can't verify the developer:
+
+1. Click **Done** (or **OK**) in that dialog.
+2. Open **System Settings ▸ Privacy & Security**, scroll down and click **Open Anyway** next to Markfetti.
+3. Confirm with your password. After this it opens normally.
+
+Or, in Terminal: `xattr -dr com.apple.quarantine /Applications/Markfetti.app`
+
+To make it your default Markdown viewer, choose **Markfetti ▸ Make Default Markdown Viewer**.
+
 ## Build
 
 Requires Xcode (Swift 5.9+), macOS 13 or later.
@@ -18,6 +33,7 @@ Requires Xcode (Swift 5.9+), macOS 13 or later.
 ```bash
 ./build.sh            # → build/Markfetti.app
 ./build.sh --install  # also copies it to /Applications
+./scripts/make-dmg.sh # → build/Markfetti-<version>.dmg
 ```
 
 All rendering libraries are vendored in `Resources/web/vendor` (pinned versions, fetched by
