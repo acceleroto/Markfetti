@@ -1,6 +1,8 @@
 # Markfetti — kitchen sink
 
-![logo](images/logo.svg) Every GitHub Markdown feature in one file. Edit and save this file while it's open to see live reload.
+<img src="images/markfetti-icon.png" alt="Markfetti icon" width="96" align="right">
+
+Every GitHub Markdown feature in one file. Edit and save this file while it's open to see live reload.
 
 Use **View ▸ Show Outline** to see a list of headings.
 

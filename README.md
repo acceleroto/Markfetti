@@ -1,6 +1,19 @@
-# Markfetti
+<p align="center">
+  <img src="graphics/markfetti-icon-256.png" width="128" height="128" alt="Markfetti app icon">
+</p>
 
-A macOS Markdown viewer that renders `.md` files the way github.com does.
+<h1 align="center">Markfetti</h1>
+
+<p align="center">
+  <b>A macOS Markdown viewer that renders <code>.md</code> files the way github.com does.</b><br>
+  Math, Mermaid diagrams, alerts, maps and 3D models included.
+</p>
+
+<p align="center">
+  <a href="https://github.com/acceleroto/Markfetti/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/acceleroto/Markfetti?label=download&color=8a3ffc"></a>
+  <img alt="macOS 13 or later" src="https://img.shields.io/badge/macOS-13%2B-0a84ff?logo=apple&logoColor=white">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-ff2d95"></a>
+</p>
 
 **Supports:** CommonMark + GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks), footnotes,
 alerts (`> [!NOTE]` …), `:emoji:` shortcodes, heading anchors, syntax highlighting (~80 languages),
