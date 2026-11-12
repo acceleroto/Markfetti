@@ -29,8 +29,9 @@ echo "Packaging with: $PKG_ID"
 # Finds the Mac App Store (distribution) profile whose application identifier ends in .<bundle id>.
 find_profile() {
   local bundle=$1 f plist="$WORK/profile.plist"
-  for f in AppStore/profiles/*.provisionprofile "$HOME/Library/MobileDevice/Provisioning Profiles/"*.provisionprofile \
-           "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/"*.provisionprofile; do
+  for f in AppStore/profiles/* "$HOME/Library/MobileDevice/Provisioning Profiles/"* \
+           "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/"*; do
+    [[ "$f" == *.provisionprofile || "$f" == *.mobileprovision ]] || continue
     [[ -f "$f" ]] || continue
     security cms -D -i "$f" > "$plist" 2>/dev/null || continue
     local appid; appid=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.application-identifier" "$plist" 2>/dev/null || true)
