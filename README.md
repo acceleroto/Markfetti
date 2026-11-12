@@ -37,3 +37,9 @@ To work on the renderer without rebuilding, serve the project folder (`python3 -
 
 The app only reads local files inside the open document's folder (or its git repository), and it strips
 scripts, styles, iframes and forms from documents, as GitHub does.
+
+## License
+
+Markfetti is released under the [MIT License](LICENSE). The third-party libraries in
+`Resources/web/vendor/` keep their own licenses (MIT, BSD, ISC, Apache-2.0/MPL-2.0); see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
