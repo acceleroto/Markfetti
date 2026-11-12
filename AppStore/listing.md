@@ -1,27 +1,28 @@
 # Markfetti — App Store listing
 
 Paste each section into App Store Connect. Character counts are checked against Apple's limits.
+The listing avoids third-party trademarks (Apple rejects them in keywords and names); the repository URLs are only addresses.
 
 ## Name (30)
 Markfetti
 
 ## Subtitle (30)
-GitHub-style Markdown viewer
+Rich Markdown viewer for Mac
 
 ## Promotional text (170)
-Open any Markdown file and see it exactly the way GitHub shows it — with math, diagrams, maps and 3D models — then preview files in Finder with a tap of the space bar.
+Open any Markdown file and see it beautifully rendered, with math, diagrams, maps and 3D models. Then preview files in Finder with a tap of the space bar.
 
 ## Keywords (100, comma-separated)
-markdown,md,viewer,github,readme,preview,quick look,math,latex,mermaid,diagram,geojson,stl,docs
+markdown,md,viewer,readme,preview,reader,notes,math,latex,mermaid,diagram,geojson,stl,docs
 
 ## Description (4000)
-Markfetti is a fast, focused Markdown viewer for your Mac. Open a README, notes or documentation file and see it rendered the way github.com renders it, using the same GitHub styling in light and dark mode.
+Markfetti is a fast, focused Markdown viewer for your Mac. Open a README, notes or documentation file and see it the way it's meant to look, with clean, familiar styling in light and dark mode.
 
-EVERYTHING GITHUB SHOWS
-• GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks and footnotes
+EVERYTHING YOUR README USES
+• Extended Markdown: tables, task lists, strikethrough, autolinks and footnotes
 • Alerts: Note, Tip, Important, Warning and Caution callouts
 • Syntax highlighting for about 80 languages, with one-click copy
-• Emoji shortcodes, heading anchors and GitHub's HTML subset, including <details>, <kbd> and dark-mode <picture> images
+• Emoji shortcodes, heading anchors and common HTML, including <details>, <kbd> and dark-mode <picture> images
 
 MATH, DIAGRAMS, MAPS AND 3D
 • Math: inline and display equations, typeset with KaTeX
@@ -70,4 +71,4 @@ The app includes a Quick Look preview extension: select a .md file in Finder and
 No sign-in or account is needed.
 
 ## Screenshots (2880 × 1800, in this order)
-1-github.png · 2-math.png · 3-diagrams.png · 4-maps.png · 5-3d-models.png · 6-dark-mode.png
+1-markdown.png · 2-math.png · 3-diagrams.png · 4-maps.png · 5-3d-models.png · 6-dark-mode.png
