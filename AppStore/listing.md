@@ -22,7 +22,7 @@ EVERYTHING YOUR README USES
 • Extended Markdown: tables, task lists, strikethrough, autolinks and footnotes
 • Alerts: Note, Tip, Important, Warning and Caution callouts
 • Syntax highlighting for about 80 languages, with one-click copy
-• Emoji shortcodes, heading anchors and common HTML, including <details>, <kbd> and dark-mode <picture> images
+• Emoji shortcodes, heading anchors and common HTML, including collapsible sections, keyboard keys and dark-mode images
 
 MATH, DIAGRAMS, MAPS AND 3D
 • Math: inline and display equations, typeset with KaTeX
