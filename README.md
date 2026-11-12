@@ -39,6 +39,22 @@ Or, in Terminal: `xattr -dr com.apple.quarantine /Applications/Markfetti.app`
 
 To make it your default Markdown viewer, choose **Markfetti ▸ Make Default Markdown Viewer**.
 
+## Quick Look
+
+Markfetti also renders Markdown in **Quick Look**: press Space on a `.md` file in Finder, or look at
+Finder's preview pane, Open/Save panels and Mail attachments. It uses the same renderer as the app, so
+GitHub styling, math, alerts, highlighting, Mermaid diagrams, 3D models and relative images all work.
+
+- The preview turns on once Markfetti is in **Applications** and has been opened once. If Quick Look still
+  shows plain text, check **System Settings ▸ General ▸ Login Items & Extensions ▸ Quick Look** and make
+  sure Markfetti is switched on. Another Markdown previewer installed alongside can take priority.
+- macOS doesn't let Quick Look extensions use the network, so **remote images** show as small labelled
+  placeholders and **maps** draw their shapes without background tiles. Open the file in Markfetti to see
+  everything.
+- A **Finder thumbnail** extension, which shows the rendered first page as the file's icon, is included too.
+  Recent macOS versions only run third-party thumbnail extensions in some setups, so on many Macs Finder
+  keeps showing its plain-text thumbnail.
+
 ## Build
 
 Requires Xcode (Swift 5.9+), macOS 13 or later.
@@ -49,6 +65,10 @@ Requires Xcode (Swift 5.9+), macOS 13 or later.
 ./scripts/make-dmg.sh # → build/Markfetti-<version>.dmg
 ```
 
+`build.sh` signs the app with your **Developer ID Application** certificate if you have one, otherwise with your
+**Apple Development** certificate, otherwise ad-hoc. Set `SIGN_IDENTITY` to choose one yourself. macOS ignores
+ad-hoc-signed Quick Look extensions, so previews need one of the certificates.
+
 All rendering libraries are vendored in `Resources/web/vendor` (pinned versions, fetched by
 `scripts/fetch-vendor.sh`), so the app works offline. Only map tiles for GeoJSON/TopoJSON need the internet.
 
@@ -57,6 +77,7 @@ All rendering libraries are vendored in `Resources/web/vendor` (pinned versions,
 | Path | What |
 |---|---|
 | `Sources/Markfetti/` | AppKit shell: document, window + WKWebView, file watcher, `markfetti://` scheme handler, menus |
+| `Extensions/` | Quick Look preview and Finder thumbnail extensions (built by `build.sh`, sharing the renderer) |
 | `Resources/web/render.js` | The Markdown → HTML pipeline (markdown-it → DOMPurify → KaTeX / Mermaid / Leaflet / three.js) |
 | `Resources/web/app.css` | Page layout around `github-markdown.css` |
 | `samples/kitchen-sink.md` | A test file that uses every feature |

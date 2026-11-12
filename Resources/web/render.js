@@ -360,6 +360,13 @@
       const b = layer.getBounds();
       if (b.isValid()) map.fitBounds(b, { padding: [20, 20], maxZoom: 14 }); else map.setView([0, 0], 1);
       new ResizeObserver(() => map.invalidateSize()).observe(div);
+      if ((current?.mode || 'app') !== 'app') {
+        // macOS doesn't let Quick Look extensions use the network, so there are no map tiles.
+        const note = document.createElement('div');
+        note.className = 'map-offline-note';
+        note.textContent = 'Map tiles load when the file is opened in Markfetti';
+        div.appendChild(note);
+      }
     }
   }
 
@@ -427,6 +434,21 @@
       : '<p class="outline-title">No headings</p>';
   }
 
+  // Quick Look extensions can't reach the network, so remote images that fail to load become
+  // a small labelled placeholder instead of a broken-image icon.
+  function markOfflineImages(root) {
+    for (const img of root.querySelectorAll('img')) {
+      if (!/^https?:/i.test(img.getAttribute('src') || '')) continue;
+      img.addEventListener('error', () => {
+        const ph = document.createElement('span');
+        ph.className = 'offline-image';
+        ph.title = img.src;
+        ph.textContent = img.alt || 'image';
+        img.replaceWith(ph);
+      }, { once: true });
+    }
+  }
+
   // ------------------------------------------------------------------ render
   let current = null;
   let generation = 0;
@@ -444,8 +466,23 @@
     resolveURLs(root, payload.baseURL, payload.rootURL);
     renderMath(root);
     const special = collectSpecial(root);
+    const mode = payload.mode || 'app';
+    document.body.dataset.mode = mode;
+    if (mode === 'thumbnail') {
+      // Finder thumbnails are static snapshots: draw simple placeholders for maps and 3D models.
+      for (const [items, label] of [[special.maps, 'Map'], [special.stl, '3D model']]) {
+        for (const { pre } of items) {
+          const div = document.createElement('div');
+          div.className = 'static-placeholder';
+          div.textContent = label;
+          pre.replaceWith(div);
+        }
+        items.length = 0;
+      }
+    }
     addCopyButtons(root);
 
+    if (mode !== 'app') markOfflineImages(root);
     $content.replaceChildren(...root.childNodes);
     $source.textContent = payload.markdown || '';
     buildOutline(outline);
@@ -496,18 +533,21 @@
       return /\.svgz?$/i.test(u.pathname) || SVG_IMAGE_HOSTS.test(u.hostname);
     } catch { return false; }
   }
+  // Resolves once every image has loaded or failed, or after `ms` milliseconds.
+  function imagesLoaded(imgs = [...$content.querySelectorAll('img')], ms = 3000) {
+    return Promise.all(imgs.map((img) => new Promise((done) => {
+      if (img.complete) return done();
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
+      setTimeout(done, ms);
+    })));
+  }
   let printSwaps = [];
   async function preparePrint() {
     restorePrint();
     const imgs = [...$content.querySelectorAll('img')].filter(isSVGImage);
-    // Wait (up to 5 s) for any still-downloading images, e.g. badges on a cold cache.
-    const loaded = (img) => new Promise((done) => {
-      if (img.complete) return done();
-      img.addEventListener('load', done, { once: true });
-      img.addEventListener('error', done, { once: true });
-      setTimeout(done, 5000);
-    });
-    await Promise.all(imgs.map(loaded));
+    // Wait for any still-downloading images, e.g. badges on a cold cache.
+    await imagesLoaded(imgs, 5000);
     for (const img of imgs) {
       if (!img.isConnected || !img.complete) continue;
       const w = img.clientWidth, h = img.clientHeight;
@@ -539,6 +579,7 @@
     scrollToAnchor,
     preparePrint,
     restorePrint,
+    async imagesLoaded(ms) { await imagesLoaded(undefined, ms); },
     setSourceMode(on) { $content.hidden = !!on; $source.hidden = !on; },
     setOutline(on) { document.body.classList.toggle('show-outline', !!on); },
   };

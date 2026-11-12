@@ -81,16 +81,9 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, NSTool
 
     func render(keepScroll: Bool) {
         guard isPageReady, let doc = markdownDocument, let url = doc.fileURL else { return }
-        let dir = url.deletingLastPathComponent()
-        let root = schemeHandler.docRoot ?? dir
-        var payload: [String: Any] = [
-            "markdown": doc.text,
-            "baseURL": SchemeHandler.docURL(for: dir, isDirectory: true).absoluteString,
-            "rootURL": SchemeHandler.docURL(for: root, isDirectory: true).absoluteString,
-            "path": url.path,
-            "title": url.lastPathComponent,
-            "keepScroll": keepScroll,
-        ]
+        let root = schemeHandler.docRoot ?? url.deletingLastPathComponent()
+        var payload = MarkdownText.payload(for: url, text: doc.text, root: root)
+        payload["keepScroll"] = keepScroll
         if let anchor = doc.pendingAnchor { payload["anchor"] = anchor; doc.pendingAnchor = nil }
         webView.callAsyncJavaScript(
             "await window.markfetti.render(p, { keepScroll: p.keepScroll });"

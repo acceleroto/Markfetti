@@ -43,13 +43,5 @@ final class MarkdownDocument: NSDocument {
         if let viewer, viewer.isPageReady { viewer.scroll(toAnchor: anchor) } else { pendingAnchor = anchor }
     }
 
-    static func decode(_ data: Data) -> String {
-        if data.starts(with: [0xFF, 0xFE]) || data.starts(with: [0xFE, 0xFF]),
-           let s = String(data: data, encoding: .utf16) { return s }
-        if var s = String(data: data, encoding: .utf8) {
-            if s.hasPrefix("\u{FEFF}") { s.removeFirst() }
-            return s
-        }
-        return String(data: data, encoding: .windowsCP1252) ?? String(decoding: data, as: UTF8.self)
-    }
+    static func decode(_ data: Data) -> String { MarkdownText.decode(data) }
 }
