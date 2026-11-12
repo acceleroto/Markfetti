@@ -9,7 +9,7 @@
 	<key>CFBundleExecutable</key>
 	<string>MarkfettiThumbnail</string>
 	<key>CFBundleIdentifier</key>
-	<string>app.markfetti.viewer.thumbnail</string>
+	<string>com.acceleroto.markfetti.thumbnail</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -19,7 +19,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.1.0</string>
 	<key>CFBundleVersion</key>
-	<string>2</string>
+	<string>3</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>NSExtension</key>

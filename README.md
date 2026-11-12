@@ -60,14 +60,37 @@ GitHub styling, math, alerts, highlighting, Mermaid diagrams, 3D models and rela
 Requires Xcode (Swift 5.9+), macOS 13 or later.
 
 ```bash
-./build.sh            # → build/Markfetti.app
-./build.sh --install  # also copies it to /Applications
-./scripts/make-dmg.sh # → build/Markfetti-<version>.dmg
+./build.sh             # → build/Markfetti.app
+./build.sh --install   # also copies it to /Applications
+./scripts/make-dmg.sh  # → build/Markfetti-<version>.dmg
+./scripts/make-appstore.sh  # → build/Markfetti-<version>-AppStore.pkg (see below)
 ```
 
 `build.sh` signs the app with your **Developer ID Application** certificate if you have one, otherwise with your
 **Apple Development** certificate, otherwise ad-hoc. Set `SIGN_IDENTITY` to choose one yourself. macOS ignores
 ad-hoc-signed Quick Look extensions, so previews need one of the certificates.
+
+### Mac App Store build
+
+`./build.sh --appstore` builds the sandboxed App Store variant into `build/appstore/Markfetti.app`, signed for
+local testing. `./scripts/make-appstore.sh` signs it for distribution and packages
+`build/Markfetti-<version>-AppStore.pkg` for upload with Apple's Transporter app. It needs:
+
+- **Apple Distribution** and **Mac Installer Distribution** certificates (Xcode ▸ Settings ▸ Accounts ▸
+  Manage Certificates).
+- **Mac App Store** provisioning profiles for `com.acceleroto.markfetti`, `com.acceleroto.markfetti.preview`
+  and `com.acceleroto.markfetti.thumbnail`, in `AppStore/profiles/` (ignored by git) or
+  `~/Library/MobileDevice/Provisioning Profiles/`.
+
+Differences from the GitHub build:
+
+- **Folder access:** the sandbox only lets Markfetti read the file you opened. When a document's images are
+  in a folder it can't read, a banner offers **Allow Access…**. Choose the folder (for example the
+  repository) once and Markfetti remembers it.
+- **Quick Look:** previews can only read the previewed file, so relative images show placeholders there.
+- **Default viewer:** there's no *Make Default Markdown Viewer* menu item. Use Finder's **Get Info ▸ Open
+  with ▸ Change All…** instead.
+- **No private APIs:** the build leaves out WebKit's developer tools and a few private settings.
 
 All rendering libraries are vendored in `Resources/web/vendor` (pinned versions, fetched by
 `scripts/fetch-vendor.sh`), so the app works offline. Only map tiles for GeoJSON/TopoJSON need the internet.

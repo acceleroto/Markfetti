@@ -38,7 +38,9 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, NSTool
         config.setURLSchemeHandler(schemeHandler, forURLScheme: SchemeHandler.scheme)
         config.userContentController.add(WeakScriptHandler(self), name: "markfetti")
         config.preferences.javaScriptCanOpenWindowsAutomatically = false
+        #if !APPSTORE  // private WebKit settings are left out of the App Store build
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        #endif
         config.suppressesIncrementalRendering = true
 
         webView = WKWebView(frame: window.contentView!.bounds, configuration: config)
@@ -46,7 +48,11 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, NSTool
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsMagnification = true
+        #if APPSTORE
+        webView.underPageBackgroundColor = .windowBackgroundColor
+        #else
         webView.setValue(false, forKey: "drawsBackground")
+        #endif
         if #available(macOS 13.3, *) { webView.isInspectable = true }
         let zoom = UserDefaults.standard.double(forKey: "pageZoom")
         webView.pageZoom = zoom > 0 ? zoom : 1
@@ -66,9 +72,36 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, NSTool
     override var document: AnyObject? {
         didSet {
             guard let url = markdownDocument?.fileURL else { return }
-            schemeHandler.docRoot = SchemeHandler.allowedRoot(for: url)
+            updateDocRoot(for: url)
+            schemeHandler.onAccessDenied = { [weak self] in self?.showAccessBanner() }
             watcher = FileWatcher(url: url) { [weak self] in self?.markdownDocument?.reloadFromDisk() }
             render(keepScroll: false)
+        }
+    }
+
+    /// Files the page may load: the git repository, else (sandboxed) a folder the user granted,
+    /// else the document's own folder.
+    private func updateDocRoot(for url: URL) {
+        let granted = FolderAccess.isSandboxed ? FolderAccess.grantedFolder(containing: url) : nil
+        schemeHandler.docRoot = SchemeHandler.gitRoot(for: url) ?? granted ?? url.deletingLastPathComponent()
+    }
+
+    private var accessBannerShown = false
+    private func showAccessBanner() {
+        guard FolderAccess.isSandboxed, isPageReady, !accessBannerShown else { return }
+        accessBannerShown = true
+        webView.evaluateJavaScript("window.markfetti.showAccessBanner()", completionHandler: nil)
+    }
+
+    private func requestFolderAccess() {
+        guard let window, let url = markdownDocument?.fileURL else { return }
+        FolderAccess.requestAccess(for: url, in: window) { [weak self] granted in
+            guard let self, granted != nil else { return }
+            self.updateDocRoot(for: url)
+            // Reload so images that failed load again (the page re-renders once it reports ready).
+            self.isPageReady = false
+            self.accessBannerShown = false
+            self.webView.reload()
         }
     }
 
@@ -110,6 +143,8 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, NSTool
         if body["ready"] as? Bool == true {
             isPageReady = true
             render(keepScroll: false)
+        } else if body["requestFolderAccess"] as? Bool == true {
+            requestFolderAccess()
         } else if let text = body["copy"] as? String {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(text, forType: .string)

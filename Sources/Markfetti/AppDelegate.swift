@@ -50,7 +50,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let appMenu = submenu(in: main, title: name)
         appMenu.addItem(withTitle: "About \(name)", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
+        #if !APPSTORE  // App Review doesn't allow apps to change default handlers themselves
         appMenu.addItem(withTitle: "Make Default Markdown Viewer", action: #selector(makeDefaultViewer(_:)), keyEquivalent: "").target = self
+        #endif
         appMenu.addItem(.separator())
         let services = NSMenu(title: "Services")
         appMenu.addItem(withTitle: "Services", action: nil, keyEquivalent: "").submenu = services
@@ -67,7 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let file = submenu(in: main, title: "File")
         file.addItem(withTitle: "Open…", action: #selector(NSDocumentController.openDocument(_:)), keyEquivalent: "o")
         let recent = NSMenu(title: "Open Recent")
-        recent.perform(NSSelectorFromString("_setMenuName:"), with: "NSRecentDocumentsMenu")
+        // AppKit fills this menu because it contains the "Clear Menu" (clearRecentDocuments:) item.
         recent.addItem(withTitle: "Clear Menu", action: #selector(NSDocumentController.clearRecentDocuments(_:)), keyEquivalent: "")
         file.addItem(withTitle: "Open Recent", action: nil, keyEquivalent: "").submenu = recent
         file.addItem(.separator())

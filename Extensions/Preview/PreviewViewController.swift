@@ -11,7 +11,9 @@ final class PreviewViewController: NSViewController, QLPreviewingController {
 
     override func loadView() {
         renderer = MarkdownWebRenderer(frame: NSRect(x: 0, y: 0, width: 900, height: 700))
+        #if !APPSTORE
         renderer.webView.setValue(false, forKey: "drawsBackground")
+        #endif
         renderer.webView.autoresizingMask = [.width, .height]
         view = renderer.webView
         preferredContentSize = NSSize(width: 900, height: 700)

@@ -119,6 +119,19 @@ body.show-outline #page { margin-left: 260px; }
 .map-props th { text-align: left; padding-right: 8px; }
 .leaflet-container { font: 12px/1.5 -apple-system, sans-serif; }
 
+/* Sandboxed build: ask for access to the document's folder */
+#access-banner {
+  display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+  margin: 12px auto 0; max-width: 940px; padding: 8px 16px; box-sizing: border-box;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--panel-bg);
+  font: 13px/1.4 -apple-system, BlinkMacSystemFont, sans-serif; color: CanvasText;
+}
+#access-banner button {
+  font: inherit; padding: 3px 12px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: #fff;
+}
+@media print { #access-banner { display: none; } }
+
 /* Finder thumbnails (render.js mode "thumbnail") */
 body[data-mode="thumbnail"] .copy-btn { display: none; }
 .markdown-body .static-placeholder {

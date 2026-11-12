@@ -1,21 +1,37 @@
 #!/bin/bash
-# Builds "build/Markfetti.app".   Usage: ./build.sh [--install]
-#   --install  also copies the app to /Applications
+# Builds "build/Markfetti.app".   Usage: ./build.sh [--install | --appstore]
+#   --install   also copies the app to /Applications
+#   --appstore  builds the sandboxed Mac App Store variant into build/appstore/Markfetti.app
+#               (signed for local testing; scripts/make-appstore.sh signs and packages it for upload)
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP="build/Markfetti.app"
+MODE="${1:-}"
+if [[ "$MODE" == "--appstore" ]]; then
+  APP="build/appstore/Markfetti.app"
+  SWIFT_FLAGS=(--scratch-path .build/appstore -Xswiftc -DAPPSTORE)
+  EXT_FLAGS=(-D APPSTORE)
+  APP_ENTITLEMENTS=AppStore/Markfetti.entitlements
+  EXT_ENTITLEMENTS=AppStore/Extension.entitlements
+else
+  APP="build/Markfetti.app"
+  SWIFT_FLAGS=()
+  EXT_FLAGS=()
+  APP_ENTITLEMENTS=""
+  EXT_ENTITLEMENTS=Extensions/Shared/Extension.entitlements
+fi
 
 [[ -f Resources/web/vendor/markdown-it/markdown-it.min.js ]] || ./scripts/fetch-vendor.sh
 [[ -f Resources/AppIcon.icns ]] || swift scripts/make-icon.swift .
 
 echo "Compiling…"
-swift build -c release --arch arm64 --arch x86_64 2>&1 | grep -vE '^\[[0-9]+/[0-9]+\]' || true
-BIN="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/Markfetti"
+swift build -c release --arch arm64 --arch x86_64 ${SWIFT_FLAGS[@]+"${SWIFT_FLAGS[@]}"} 2>&1 | grep -vE '^\[[0-9]+/[0-9]+\]' || true
+BIN="$(swift build -c release --arch arm64 --arch x86_64 ${SWIFT_FLAGS[@]+"${SWIFT_FLAGS[@]}"} --show-bin-path)/Markfetti"
 [[ -x "$BIN" ]] || { echo "Build failed"; exit 1; }
 
 echo "Assembling $APP"
 rm -rf "$APP"
+mkdir -p "$(dirname "$APP")"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Markfetti"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
@@ -52,7 +68,8 @@ else
 fi
 
 # Quick Look extensions (preview + Finder thumbnails). SwiftPM can't build .appex bundles,
-# so compile them directly; they read the renderer files from the app's Resources/web.
+# so compile them directly. They read the renderer files from the app's Resources/web, except in the
+# App Store build, whose sandbox only lets each extension read its own bundle.
 SDK="$(xcrun --show-sdk-path)"
 VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Resources/Info.plist)
 BUILDNUM=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" Resources/Info.plist)
@@ -66,7 +83,7 @@ build_extension() {   # build_extension <Name> <frameworks…>
   for arch in arm64 x86_64; do
     swiftc -O -swift-version 5 -parse-as-library -application-extension -module-name "Markfetti$name" \
       -target "$arch-apple-macos13.0" -sdk "$SDK" \
-      "${SHARED[@]}" Extensions/"$name"/*.swift "${fw[@]}" \
+      ${EXT_FLAGS[@]+"${EXT_FLAGS[@]}"} "${SHARED[@]}" Extensions/"$name"/*.swift "${fw[@]}" \
       -Xlinker -application_extension -Xlinker -e -Xlinker _NSExtensionMain \
       -o "$obj/Markfetti$name-$arch"
   done
@@ -74,20 +91,25 @@ build_extension() {   # build_extension <Name> <frameworks…>
   cp "Extensions/$name/Info.plist" "$appex/Contents/Info.plist"
   /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" -c "Set :CFBundleVersion $BUILDNUM" "$appex/Contents/Info.plist"
   add_platform_keys "$appex/Contents/Info.plist"
-  codesign --force --sign "$SIGN_IDENTITY" --timestamp=none --entitlements Extensions/Shared/Extension.entitlements "$appex"
+  if [[ "$MODE" == "--appstore" ]]; then
+    mkdir -p "$appex/Contents/Resources"
+    cp -R Resources/web "$appex/Contents/Resources/web"
+  fi
+  codesign --force --sign "$SIGN_IDENTITY" --timestamp=none --entitlements "$EXT_ENTITLEMENTS" "$appex"
 }
 build_extension Preview AppKit WebKit Quartz
 build_extension Thumbnail AppKit WebKit QuickLookThumbnailing
 
 # Sign the app last (no --deep: that would re-sign the extensions without their entitlements).
-codesign --force --sign "$SIGN_IDENTITY" --timestamp=none "$APP"
+codesign --force --sign "$SIGN_IDENTITY" --timestamp=none ${APP_ENTITLEMENTS:+--entitlements "$APP_ENTITLEMENTS"} "$APP"
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
-if [[ "${1:-}" == "--install" ]]; then
+if [[ "$MODE" == "--install" ]]; then
   rm -rf "/Applications/Markfetti.app"
   cp -R "$APP" /Applications/
   # Only the installed copy should provide the Quick Look extensions.
   "$LSREGISTER" -u "$PWD/$APP" >/dev/null 2>&1 || true
+  "$LSREGISTER" -u "$PWD/build/appstore/Markfetti.app" >/dev/null 2>&1 || true
   "$LSREGISTER" -f "/Applications/Markfetti.app" || true
   pluginkit -a "/Applications/Markfetti.app/Contents/PlugIns/MarkfettiPreview.appex" 2>/dev/null || true
   pluginkit -a "/Applications/Markfetti.app/Contents/PlugIns/MarkfettiThumbnail.appex" 2>/dev/null || true

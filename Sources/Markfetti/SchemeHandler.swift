@@ -9,6 +9,9 @@ final class SchemeHandler: NSObject, WKURLSchemeHandler {
     static let scheme = "markfetti"
     let appRoot: URL
     var docRoot: URL?
+    /// Called (on the main thread) when a document file inside `docRoot` can't be read for lack
+    /// of permission — in the sandboxed build that means the user hasn't granted its folder yet.
+    var onAccessDenied: (() -> Void)?
 
     init(appRoot: URL) {
         self.appRoot = appRoot.standardizedFileURL.resolvingSymlinksInPath()
@@ -39,7 +42,13 @@ final class SchemeHandler: NSObject, WKURLSchemeHandler {
             if let root = docRoot, Self.contains(root, f) { file = f }
         default: break
         }
-        guard let file, let data = try? Data(contentsOf: file) else {
+        var data: Data?
+        if let file {
+            do { data = try Data(contentsOf: file) } catch let error as CocoaError where error.code == .fileReadNoPermission {
+                if url.host == "doc" { onAccessDenied?() }
+            } catch {}
+        }
+        guard let file, let data else {
             let r = HTTPURLResponse(url: url, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: [:])!
             task.didReceive(r); task.didReceive(Data()); task.didFinish()
             return
@@ -79,13 +88,17 @@ final class SchemeHandler: NSObject, WKURLSchemeHandler {
 
     /// The folder a document may load files from: its git repository root, else its own folder.
     static func allowedRoot(for document: URL) -> URL {
-        let dir = document.deletingLastPathComponent().standardizedFileURL
+        gitRoot(for: document) ?? document.deletingLastPathComponent().standardizedFileURL
+    }
+
+    /// The enclosing git repository (stopping at the home folder), if any.
+    static func gitRoot(for document: URL) -> URL? {
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
-        var cur = dir
+        var cur = document.deletingLastPathComponent().standardizedFileURL
         while cur.path != "/" && cur.path != home {
             if FileManager.default.fileExists(atPath: cur.appendingPathComponent(".git").path) { return cur }
             cur = cur.deletingLastPathComponent()
         }
-        return dir
+        return nil
     }
 }

@@ -434,11 +434,10 @@
       : '<p class="outline-title">No headings</p>';
   }
 
-  // Quick Look extensions can't reach the network, so remote images that fail to load become
-  // a small labelled placeholder instead of a broken-image icon.
+  // Quick Look extensions can't reach the network (and in the App Store build can't read files
+  // next to the document), so images that fail to load become a small labelled placeholder.
   function markOfflineImages(root) {
     for (const img of root.querySelectorAll('img')) {
-      if (!/^https?:/i.test(img.getAttribute('src') || '')) continue;
       img.addEventListener('error', () => {
         const ph = document.createElement('span');
         ph.className = 'offline-image';
@@ -579,6 +578,19 @@
     scrollToAnchor,
     preparePrint,
     restorePrint,
+    // Sandboxed (App Store) build: the document's images are in a folder it hasn't been granted.
+    showAccessBanner() {
+      if (document.getElementById('access-banner')) return;
+      const bar = document.createElement('div');
+      bar.id = 'access-banner';
+      bar.innerHTML = '<span>Some images are in a folder Markfetti hasn\u2019t been given access to.</span>';
+      const button = document.createElement('button');
+      button.textContent = 'Allow Access\u2026';
+      button.addEventListener('click', () =>
+        window.webkit?.messageHandlers?.markfetti?.postMessage({ requestFolderAccess: true }));
+      bar.appendChild(button);
+      document.getElementById('page').prepend(bar);
+    },
     async imagesLoaded(ms) { await imagesLoaded(undefined, ms); },
     setSourceMode(on) { $content.hidden = !!on; $source.hidden = !on; },
     setOutline(on) { document.body.classList.toggle('show-outline', !!on); },

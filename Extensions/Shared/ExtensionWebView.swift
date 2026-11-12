@@ -35,11 +35,14 @@ final class MarkdownWebRenderer: NSObject, WKNavigationDelegate {
         webView.navigationDelegate = self
         // Quick Look hosts this view in another process (and thumbnails render in a window that is
         // never shown), so WebKit can wrongly decide the page is hidden and stop painting it.
+        // (Private API, so it's left out of the App Store build.)
+        #if !APPSTORE
         let occlusion = NSSelectorFromString("_setWindowOcclusionDetectionEnabled:")
         if let method = class_getInstanceMethod(WKWebView.self, occlusion) {
             typealias Setter = @convention(c) (AnyObject, Selector, Bool) -> Void
             unsafeBitCast(method_getImplementation(method), to: Setter.self)(webView, occlusion, false)
         }
+        #endif
     }
 
     func render(_ url: URL, mode: String, waitForImages: Bool = false, timeout: TimeInterval,
