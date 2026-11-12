@@ -483,9 +483,62 @@
   // Re-render when the system switches light/dark (Mermaid themes, map tiles)
   dark.addEventListener('change', () => { if (current) render(current, { keepScroll: true }); });
 
+  // Printing: WebKit's PDF output drops the alpha of translucent SVG gradients, so badges
+  // (shields.io etc.) come out dark gray. Before printing, swap SVG <img>s for canvases drawn
+  // at 4× (canvas rendering is correct, and drawing cross-origin images for display is allowed).
+  const SVG_IMAGE_HOSTS = /(^|\.)(shields\.io|badgen\.net|badge\.fury\.io|forthebadge\.com)$/i;
+  function isSVGImage(img) {
+    const src = img.currentSrc || img.src;
+    if (!src) return false;
+    if (/^data:image\/svg\+xml/i.test(src)) return true;
+    try {
+      const u = new URL(src);
+      return /\.svgz?$/i.test(u.pathname) || SVG_IMAGE_HOSTS.test(u.hostname);
+    } catch { return false; }
+  }
+  let printSwaps = [];
+  async function preparePrint() {
+    restorePrint();
+    const imgs = [...$content.querySelectorAll('img')].filter(isSVGImage);
+    // Wait (up to 5 s) for any still-downloading images, e.g. badges on a cold cache.
+    const loaded = (img) => new Promise((done) => {
+      if (img.complete) return done();
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
+      setTimeout(done, 5000);
+    });
+    await Promise.all(imgs.map(loaded));
+    for (const img of imgs) {
+      if (!img.isConnected || !img.complete) continue;
+      const w = img.clientWidth, h = img.clientHeight;
+      if (!w || !h || !img.naturalWidth) continue;
+      const scale = 4;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(w * scale);
+      canvas.height = Math.round(h * scale);
+      const cs = getComputedStyle(img);
+      Object.assign(canvas.style, {
+        width: w + 'px', height: h + 'px', verticalAlign: cs.verticalAlign, float: cs.float,
+        margin: cs.margin, padding: cs.padding, border: cs.border, boxSizing: 'content-box',
+      });
+      canvas.setAttribute('role', 'img');
+      canvas.setAttribute('aria-label', img.alt || '');
+      try { canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height); } catch { continue; }
+      img.replaceWith(canvas);
+      printSwaps.push([canvas, img]);
+    }
+    return printSwaps.length;
+  }
+  function restorePrint() {
+    for (const [canvas, img] of printSwaps) if (canvas.isConnected) canvas.replaceWith(img);
+    printSwaps = [];
+  }
+
   window.markfetti = {
     render,
     scrollToAnchor,
+    preparePrint,
+    restorePrint,
     setSourceMode(on) { $content.hidden = !!on; $source.hidden = !on; },
     setOutline(on) { document.body.classList.toggle('show-outline', !!on); },
   };

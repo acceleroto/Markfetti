@@ -250,37 +250,46 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, NSTool
     }
 
     private func runPrint(saveTo url: URL?) {
-        guard let window else { return }
+        guard window != nil else { return }
         let previousAppearance = webView.appearance
         webView.appearance = NSAppearance(named: .aqua)
-        // Give the page a moment to re-theme (Mermaid diagrams re-render on theme change).
+        // Give the page a moment to re-theme (Mermaid diagrams re-render on theme change), then
+        // swap SVG images for canvases, which print with correct colors (see render.js).
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
-            guard let self else { return }
-            let info = (self.markdownDocument?.printInfo ?? NSPrintInfo.shared).copy() as! NSPrintInfo
-            info.horizontalPagination = .fit
-            info.verticalPagination = .automatic
-            info.isHorizontallyCentered = false
-            info.isVerticallyCentered = false
-            info.topMargin = 36; info.bottomMargin = 36; info.leftMargin = 36; info.rightMargin = 36
-            if let url {
-                info.jobDisposition = .save
-                info.dictionary()[NSPrintInfo.AttributeKey.jobSavingURL] = url
+            self?.webView.callAsyncJavaScript("return await window.markfetti.preparePrint()",
+                                              arguments: [:], in: nil, in: .page) { [weak self] _ in
+                self?.startPrintOperation(saveTo: url, previousAppearance: previousAppearance)
             }
-            let op = self.webView.printOperation(with: info)
-            op.view?.frame = self.webView.bounds
-            op.showsPrintPanel = url == nil
-            op.showsProgressPanel = !self.quitAfterPrint
-            op.jobTitle = self.markdownDocument?.displayName ?? "Markdown"
-            op.runModal(for: window, delegate: self,
-                        didRun: #selector(self.printOperationDidRun(_:success:contextInfo:)),
-                        contextInfo: nil)
-            self.pendingAppearanceRestore = previousAppearance
         }
+    }
+
+    private func startPrintOperation(saveTo url: URL?, previousAppearance: NSAppearance?) {
+        guard let window else { return }
+        let info = (markdownDocument?.printInfo ?? NSPrintInfo.shared).copy() as! NSPrintInfo
+        info.horizontalPagination = .fit
+        info.verticalPagination = .automatic
+        info.isHorizontallyCentered = false
+        info.isVerticallyCentered = false
+        info.topMargin = 36; info.bottomMargin = 36; info.leftMargin = 36; info.rightMargin = 36
+        if let url {
+            info.jobDisposition = .save
+            info.dictionary()[NSPrintInfo.AttributeKey.jobSavingURL] = url
+        }
+        let op = webView.printOperation(with: info)
+        op.view?.frame = webView.bounds
+        op.showsPrintPanel = url == nil
+        op.showsProgressPanel = !quitAfterPrint
+        op.jobTitle = markdownDocument?.displayName ?? "Markdown"
+        pendingAppearanceRestore = previousAppearance
+        op.runModal(for: window, delegate: self,
+                    didRun: #selector(printOperationDidRun(_:success:contextInfo:)),
+                    contextInfo: nil)
     }
     private var pendingAppearanceRestore: NSAppearance?
     private var didAutoExport = false
     private var quitAfterPrint = false
     @objc private func printOperationDidRun(_ op: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        webView.evaluateJavaScript("window.markfetti.restorePrint()", completionHandler: nil)
         webView.appearance = pendingAppearanceRestore
         pendingAppearanceRestore = nil
         if quitAfterPrint { NSApp.terminate(nil) }
