@@ -7,7 +7,7 @@ The listing avoids third-party trademarks (Apple rejects them in keywords and na
 Markfetti
 
 ## Subtitle (30)
-Rich Markdown viewer for Mac
+Rich Markdown viewer & preview
 
 ## Promotional text (170)
 Open any Markdown file and see it beautifully rendered, with math, diagrams, maps and 3D models. Then preview files in Finder with a tap of the space bar.
