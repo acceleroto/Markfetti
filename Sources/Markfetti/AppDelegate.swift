@@ -5,6 +5,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = buildMainMenu()
+        // Testing/screenshot hook: MARKFETTI_APPEARANCE=dark or light overrides the system appearance.
+        switch ProcessInfo.processInfo.environment["MARKFETTI_APPEARANCE"] {
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        default: break
+        }
     }
 
     // With no file to open (launched from the Dock/Finder), show the Open panel.
